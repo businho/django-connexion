@@ -1,0 +1,7 @@
+.eggs
+*.pyc
+*.egg-info
+
+.python-version
+
+.coverage
