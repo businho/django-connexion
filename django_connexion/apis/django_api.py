@@ -3,18 +3,37 @@ This module defines a Django Connexion API which implements translations between
 Connexion requests / responses.
 """
 from connexion.apis.abstract import AbstractAPI
+from connexion.utils import yamldumper
+from django.http import HttpResponse, JsonResponse
+from django.urls import path
 
 
 class DjangoApi(AbstractAPI):
     """
     Defines an abstract interface for a Swagger API
     """
+    def __init__(self, *args, name='django_connexion', **kwargs):
+        self.name = name
+        self._url_patterns = []
+        super().__init__(*args, **kwargs)
 
     def add_openapi_json(self):
         """
         Adds openapi spec to {base_path}/openapi.json
              (or {base_path}/swagger.json for swagger2)
         """
+        self._url_patterns.append(
+            path('openapi.json', self._handlers.get_json_spec)
+        )
+
+    def add_openapi_yaml(self):
+        """
+        Adds spec yaml to {base_path}/swagger.yaml
+        or {base_path}/openapi.yaml (for oas3)
+        """
+        self._url_patterns.append(
+            path('openapi.yaml', self._handlers.get_yaml_spec)
+        )
 
     def add_swagger_ui(self):
         """
@@ -23,7 +42,8 @@ class DjangoApi(AbstractAPI):
 
     def add_auth_on_not_found(self, security, security_definitions):
         """
-        Adds a 404 error handler to authenticate and only expose the 404 status if the security validation pass.
+        Adds a 404 error handler to authenticate and only expose the 404 status if the security
+        validation pass.
         """
 
     @staticmethod
@@ -67,7 +87,8 @@ class DjangoApi(AbstractAPI):
         """ Cast ConnexionResponse to framework response class """
 
     @classmethod
-    def _build_response(cls, data, mimetype, content_type=None, status_code=None, headers=None, extra_context=None):
+    def _build_response(cls, data, mimetype, content_type=None, status_code=None, headers=None,
+                        extra_context=None):
         """
         Create a framework response from the provided arguments.
         :param data: Body data.
@@ -82,3 +103,42 @@ class DjangoApi(AbstractAPI):
         :return A framework response.
         :rtype Response
         """
+
+    @property
+    def urls(self):
+        return self._url_patterns, 'django_connexion', self.name
+
+    @property
+    def _handlers(self):
+        # type: () -> InternalHandlers
+        if not hasattr(self, '_internal_handlers'):
+            self._internal_handlers = InternalHandlers(
+                self.base_path, self.options, self.specification)
+        return self._internal_handlers
+
+
+class InternalHandlers:
+    """
+    Django handlers for internally registered endpoints.
+    """
+
+    def __init__(self, base_path, options, specification):
+        self.base_path = base_path
+        self.options = options
+        self.specification = specification
+
+    def get_json_spec(self, request):
+        spec = self._spec_for_prefix(request)
+        return JsonResponse(spec)
+
+    def get_yaml_spec(self, request):
+        content = yamldumper(self._spec_for_prefix(request))
+        return HttpResponse(content, content_type='text/yaml')
+
+    def _spec_for_prefix(self, request):
+        """
+        Modify base_path in the spec based on incoming url
+        This fixes problems with reverse proxies changing the path.
+        """
+        base_path = '/'
+        return self.specification.with_base_path(base_path).raw

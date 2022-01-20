@@ -18,3 +18,5 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+ROOT_URLCONF = 'django_connexion.tests.testapp.urls'
