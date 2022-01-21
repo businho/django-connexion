@@ -15,6 +15,4 @@ def test_yaml_spec(client):
 
 def test_endpoint(client):
     response = client.post('/helloworld/greeting/ze')
-    assert b'Hello World' in response.content
-    # content = response.json()
-    # assert 'Hello World' in content
+    assert b'Hello ze' in response.content

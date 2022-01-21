@@ -14,7 +14,6 @@ from django.urls import path as django_path
 from django.views.decorators.http import require_http_methods
 
 from django_connexion.apis import django_utils
-from django_connexion.locals.context import get_request
 from django_connexion.security.django_security_handler_factory import DjangoSecurityHandlerFactory
 
 logger = logging.getLogger('connexion.apis.django_api')
@@ -78,20 +77,8 @@ class DjangoApi(AbstractAPI):
                                                        operation.randomize_endpoint)
         function = operation.function
         methods_decorator = require_http_methods([method.upper()])
+        decorated_function = methods_decorator(function)
 
-        def _decorated_function(function):
-            def wrapper(*args, **kwargs):
-                from django_connexion.locals.context import get_request
-                request = get_request()
-                import ipdb;ipdb.set_trace()
-                return function(request, *args, **kwargs)
-
-            return wrapper
-
-        import ipdb;ipdb.set_trace()
-        decorated_function = _decorated_function(methods_decorator(function))
-
-        import ipdb;ipdb.set_trace()
         _path = django_path(_django_path.lstrip('/'), decorated_function, name=endpoint_name)
         self._url_patterns.append(_path)
 
@@ -100,11 +87,8 @@ class DjangoApi(AbstractAPI):
         """
         This method converts the user framework request to a ConnexionRequest.
         """
-        django_request = get_request()
-        context_dict = {}
+        context_dict = {'request': request}
         body = request.body
-        print('GET REQUEST', args, params, body)
-        import ipdb;ipdb.set_trace()
 
         connexion_request = ConnexionRequest(
             request.path,
@@ -169,7 +153,7 @@ class DjangoApi(AbstractAPI):
         :return A framework response.
         :rtype Response
         """
-        import ipdb;ipdb.set_trace()
+        breakpoint()
 
     @property
     def urls(self):
