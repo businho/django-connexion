@@ -11,3 +11,8 @@ def test_json_spec(client):
 def test_yaml_spec(client):
     response = client.get('/helloworld/openapi.yaml')
     assert b'title: Hello World' in response.content
+
+
+def test_endpoint(client):
+    response = client.post('/helloworld/greeting/ze')
+    assert b'Hello ze' in response.content

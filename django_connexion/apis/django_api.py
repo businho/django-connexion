@@ -2,10 +2,21 @@
 This module defines a Django Connexion API which implements translations between Django and
 Connexion requests / responses.
 """
+
+import json
+import logging
+
 from connexion.apis.abstract import AbstractAPI
+from connexion.lifecycle import ConnexionRequest
 from connexion.utils import yamldumper
 from django.http import HttpResponse, JsonResponse
-from django.urls import path
+from django.urls import path as django_path
+from django.views.decorators.http import require_http_methods
+
+from django_connexion.apis import django_utils
+from django_connexion.security.django_security_handler_factory import DjangoSecurityHandlerFactory
+
+logger = logging.getLogger('connexion.apis.django_api')
 
 
 class DjangoApi(AbstractAPI):
@@ -23,7 +34,7 @@ class DjangoApi(AbstractAPI):
              (or {base_path}/swagger.json for swagger2)
         """
         self._url_patterns.append(
-            path('openapi.json', self._handlers.get_json_spec)
+            django_path('openapi.json', self._handlers.get_json_spec)
         )
 
     def add_openapi_yaml(self):
@@ -32,7 +43,7 @@ class DjangoApi(AbstractAPI):
         or {base_path}/openapi.yaml (for oas3)
         """
         self._url_patterns.append(
-            path('openapi.yaml', self._handlers.get_yaml_spec)
+            django_path('openapi.yaml', self._handlers.get_yaml_spec)
         )
 
     def add_swagger_ui(self):
@@ -49,21 +60,58 @@ class DjangoApi(AbstractAPI):
     @staticmethod
     def make_security_handler_factory(pass_context_arg_name):
         """ Create SecurityHandlerFactory to create all security check handlers """
+        return DjangoSecurityHandlerFactory(pass_context_arg_name)
 
     def _add_operation_internal(self, method, path, operation):
         """
         Adds the operation according to the user framework in use.
         It will be used to register the operation on the user framework router.
         """
+        # print('_add_operation_internal', method, path, operation)
+        operation_id = operation.operation_id
+        logger.debug('... Adding %s -> %s', method.upper(), operation_id,
+                     extra=vars(operation))
+
+        _django_path = django_utils.djangofy_path(path, operation.get_path_parameter_types())
+        endpoint_name = django_utils.djangofy_endpoint(operation.operation_id,
+                                                       operation.randomize_endpoint)
+        function = operation.function
+        methods_decorator = require_http_methods([method.upper()])
+        decorated_function = methods_decorator(function)
+
+        _path = django_path(_django_path.lstrip('/'), decorated_function, name=endpoint_name)
+        self._url_patterns.append(_path)
 
     @classmethod
-    def get_request(self, *args, **kwargs):
+    def get_request(self, request, *args, **params):
         """
         This method converts the user framework request to a ConnexionRequest.
         """
+        context_dict = {'request': request}
+        body = request.body
+
+        connexion_request = ConnexionRequest(
+            request.path,
+            request.method,
+            headers=request.headers,
+            form=request.POST,
+            query=request.GET,
+            body=body,
+            json_getter=lambda: request.content_type == 'application/json' and json.loads(body),
+            files=request.FILES,
+            path_params=params,
+            context=context_dict
+        )
+        logger.debug('Getting data and status code',
+                     extra={
+                         'data': connexion_request.body,
+                         'data_type': type(connexion_request.body),
+                         'url': connexion_request.url
+                     })
+        return connexion_request
 
     @classmethod
-    def get_response(self, response, mimetype=None, request=None):
+    def get_response(cls, response, mimetype=None, request=None):
         """
         This method converts a handler response to a framework response.
         This method should just retrieve response from handler then call `cls._get_response`.
@@ -73,10 +121,12 @@ class DjangoApi(AbstractAPI):
         :type mimetype: Union[None, str]
         :param request: The request associated with this response (the user framework request).
         """
+        return cls._get_response(response, mimetype=mimetype)
 
     @classmethod
     def _is_framework_response(cls, response):
         """ Return True if `response` is a framework response class """
+        return django_utils.is_django_response(response)
 
     @classmethod
     def _framework_to_connexion_response(cls, response, mimetype):
@@ -103,6 +153,7 @@ class DjangoApi(AbstractAPI):
         :return A framework response.
         :rtype Response
         """
+        breakpoint()
 
     @property
     def urls(self):
