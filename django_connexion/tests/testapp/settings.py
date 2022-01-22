@@ -13,10 +13,6 @@ INSTALLED_APPS = [
     'django_connexion.tests.testapp',
 ]
 
-MIDDLEWARE = [
-    'django_connexion.middleware.ConnexionMiddleware',
-]
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
