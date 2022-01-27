@@ -67,7 +67,6 @@ class DjangoApi(AbstractAPI):
         Adds the operation according to the user framework in use.
         It will be used to register the operation on the user framework router.
         """
-        # print('_add_operation_internal', method, path, operation)
         operation_id = operation.operation_id
         logger.debug('... Adding %s -> %s', method.upper(), operation_id,
                      extra=vars(operation))
@@ -153,7 +152,19 @@ class DjangoApi(AbstractAPI):
         :return A framework response.
         :rtype Response
         """
-        breakpoint()
+        if cls._is_framework_response(data):
+            return HttpResponse(data, status_code=status_code, headers=headers)
+
+        data, status_code, serialized_mimetype = cls._prepare_body_and_status_code(
+            data=data, mimetype=mimetype, status_code=status_code, extra_context=extra_context)
+        print('MIME', mimetype, serialized_mimetype)
+        kwargs = {
+            'content_type': content_type or 'text/plain; charset=utf-8',
+            'headers': headers,
+            'status': status_code
+        }
+        kwargs = {k: v for k, v in kwargs.items() if v is not None}
+        return HttpResponse(data, **kwargs)
 
     @property
     def urls(self):
