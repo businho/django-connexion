@@ -34,7 +34,9 @@ def test_get_response_from_django_stream_response(api):
 
 
 def test_get_response_from_connexion_response(api):
-    response = api.get_response(ConnexionResponse(status_code=201, mimetype='text/plain', body='foo', headers={'X-header': 'value'}))
+    connexion_response = ConnexionResponse(
+        status_code=201, mimetype='text/plain', body='foo', headers={'X-header': 'value'})
+    response = api.get_response(connexion_response)
     assert isinstance(response, HttpResponse)
     assert response.status_code == 201
     assert response.content == b'foo'
@@ -142,7 +144,7 @@ def test_get_connexion_response_from_connexion_response(api):
     response = api.get_connexion_response(ConnexionResponse(status_code=201, content_type='text/plain', body='foo', headers={'X-header': 'value'}))
     assert isinstance(response, ConnexionResponse)
     assert response.status_code == 201
-    assert response.content == b'foo'
+    assert response.body == b'foo'
     assert dict(response.headers) == {'Content-Type': 'text/plain; charset=utf-8', 'X-header': 'value'}
 
 
@@ -150,7 +152,7 @@ def test_get_connexion_response_from_tuple(api):
     response = api.get_connexion_response(('foo', 201, {'X-header': 'value'}))
     assert isinstance(response, ConnexionResponse)
     assert response.status_code == 201
-    assert response.content == b'foo'
+    assert response.body == b'foo'
     assert dict(response.headers) == {'Content-Type': 'text/plain; charset=utf-8', 'X-header': 'value'}
 
 

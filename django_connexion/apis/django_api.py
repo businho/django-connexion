@@ -7,7 +7,7 @@ import json
 import logging
 
 from connexion.apis.abstract import AbstractAPI
-from connexion.lifecycle import ConnexionRequest
+from connexion.lifecycle import ConnexionRequest, ConnexionResponse
 from connexion.utils import yamldumper
 from django.http import HttpResponse, JsonResponse
 from django.urls import path as django_path
@@ -130,6 +130,19 @@ class DjangoApi(AbstractAPI):
     @classmethod
     def _framework_to_connexion_response(cls, response, mimetype):
         """ Cast framework response class to ConnexionResponse used for schema validation """
+        content_type = response.headers['Content-Type']
+        try:
+            mimetype, _ = content_type.split(';', 1)
+        except ValueError:
+            mimetype = content_type
+
+        return ConnexionResponse(
+            status_code=response.status_code,
+            mimetype=mimetype,
+            content_type=content_type,
+            headers=response.headers,
+            body=response.content,
+        )
 
     @classmethod
     def _connexion_to_framework_response(cls, response, mimetype, extra_context=None):
@@ -157,9 +170,16 @@ class DjangoApi(AbstractAPI):
 
         data, status_code, serialized_mimetype = cls._prepare_body_and_status_code(
             data=data, mimetype=mimetype, status_code=status_code, extra_context=extra_context)
-        print('MIME', mimetype, serialized_mimetype)
+
+        mimetype = mimetype or serialized_mimetype
+        if content_type is None:
+            content_type = 'text/plain'
+
+        if ';' not in content_type:
+            content_type += '; charset=utf-8'
+
         kwargs = {
-            'content_type': content_type or 'text/plain; charset=utf-8',
+            'content_type': content_type,
             'headers': headers,
             'status': status_code
         }
