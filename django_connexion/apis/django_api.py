@@ -131,10 +131,12 @@ class DjangoApi(AbstractAPI):
     def _framework_to_connexion_response(cls, response, mimetype):
         """ Cast framework response class to ConnexionResponse used for schema validation """
         content_type = response.headers['Content-Type']
-        try:
-            mimetype, _ = content_type.split(';', 1)
-        except ValueError:
-            mimetype = content_type
+
+        if not mimetype:
+            try:
+                mimetype, _ = content_type.split(';', 1)
+            except ValueError:
+                mimetype = content_type
 
         return ConnexionResponse(
             status_code=response.status_code,
@@ -147,6 +149,17 @@ class DjangoApi(AbstractAPI):
     @classmethod
     def _connexion_to_framework_response(cls, response, mimetype, extra_context=None):
         """ Cast ConnexionResponse to framework response class """
+        content_type = response.content_type
+        if not content_type:
+            content_type = f'{mimetype or response.mimetype}; charset=utf-8'
+
+        django_response = HttpResponse(
+            status=response.status_code,
+            content_type=content_type,
+            content=response.body,
+            headers=response.headers,
+        )
+        return django_response
 
     @classmethod
     def _build_response(cls, data, mimetype, content_type=None, status_code=None, headers=None,
