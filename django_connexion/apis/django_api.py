@@ -132,6 +132,13 @@ class DjangoApi(AbstractAPI):
         """ Cast framework response class to ConnexionResponse used for schema validation """
         content_type = response.headers['Content-Type']
 
+        if response.streaming:
+            body = response.streaming_content
+            if not content_type:
+                content_type = 'application/octet-stream'
+        else:
+            body = response.content
+
         if not mimetype:
             try:
                 mimetype, _ = content_type.split(';', 1)
@@ -143,7 +150,7 @@ class DjangoApi(AbstractAPI):
             mimetype=mimetype,
             content_type=content_type,
             headers=response.headers,
-            body=response.content,
+            body=body,
         )
 
     @classmethod
@@ -184,11 +191,19 @@ class DjangoApi(AbstractAPI):
         data, status_code, serialized_mimetype = cls._prepare_body_and_status_code(
             data=data, mimetype=mimetype, status_code=status_code, extra_context=extra_context)
 
+        if data is None:
+            data = b''
+
         mimetype = mimetype or serialized_mimetype
         if content_type is None:
-            content_type = mimetype or 'text/plain'
+            if mimetype:
+                content_type = mimetype
+            elif isinstance(data, bytes):
+                content_type = 'application/octet-stream'
+            else:
+                content_type = 'text/plain'
 
-        if ';' not in content_type:
+        if isinstance(data, (str, dict)):
             content_type += '; charset=utf-8'
 
         kwargs = {

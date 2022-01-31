@@ -3,7 +3,7 @@ import random
 import re
 import string
 
-from django.http import HttpResponse
+from django.http.response import HttpResponseBase
 
 PATH_PARAMETER = re.compile(r'\{([^}]*)\}')
 
@@ -75,4 +75,4 @@ def is_django_response(obj: object) -> bool:
     >>> is_django_response(flask.Response())
     True
     """
-    return isinstance(obj, HttpResponse)
+    return isinstance(obj, HttpResponseBase)
