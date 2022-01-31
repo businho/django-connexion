@@ -186,7 +186,7 @@ class DjangoApi(AbstractAPI):
 
         mimetype = mimetype or serialized_mimetype
         if content_type is None:
-            content_type = 'text/plain'
+            content_type = mimetype or 'text/plain'
 
         if ';' not in content_type:
             content_type += '; charset=utf-8'
