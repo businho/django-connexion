@@ -7,7 +7,7 @@ import json
 import logging
 
 from connexion.apis.abstract import AbstractAPI
-from connexion.lifecycle import ConnexionRequest
+from connexion.lifecycle import ConnexionRequest, ConnexionResponse
 from connexion.utils import yamldumper
 from django.http import HttpResponse, JsonResponse
 from django.urls import path as django_path
@@ -67,7 +67,6 @@ class DjangoApi(AbstractAPI):
         Adds the operation according to the user framework in use.
         It will be used to register the operation on the user framework router.
         """
-        # print('_add_operation_internal', method, path, operation)
         operation_id = operation.operation_id
         logger.debug('... Adding %s -> %s', method.upper(), operation_id,
                      extra=vars(operation))
@@ -131,10 +130,43 @@ class DjangoApi(AbstractAPI):
     @classmethod
     def _framework_to_connexion_response(cls, response, mimetype):
         """ Cast framework response class to ConnexionResponse used for schema validation """
+        content_type = response.headers['Content-Type']
+
+        if response.streaming:
+            body = response.streaming_content
+            if not content_type:
+                content_type = 'application/octet-stream'
+        else:
+            body = response.content
+
+        if not mimetype:
+            try:
+                mimetype, _ = content_type.split(';', 1)
+            except ValueError:
+                mimetype = content_type
+
+        return ConnexionResponse(
+            status_code=response.status_code,
+            mimetype=mimetype,
+            content_type=content_type,
+            headers=response.headers,
+            body=body,
+        )
 
     @classmethod
     def _connexion_to_framework_response(cls, response, mimetype, extra_context=None):
         """ Cast ConnexionResponse to framework response class """
+        content_type = response.content_type
+        if not content_type:
+            content_type = f'{mimetype or response.mimetype}; charset=utf-8'
+
+        django_response = HttpResponse(
+            status=response.status_code,
+            content_type=content_type,
+            content=response.body,
+            headers=response.headers,
+        )
+        return django_response
 
     @classmethod
     def _build_response(cls, data, mimetype, content_type=None, status_code=None, headers=None,
@@ -153,7 +185,34 @@ class DjangoApi(AbstractAPI):
         :return A framework response.
         :rtype Response
         """
-        breakpoint()
+        if cls._is_framework_response(data):
+            return HttpResponse(data, status_code=status_code, headers=headers)
+
+        data, status_code, serialized_mimetype = cls._prepare_body_and_status_code(
+            data=data, mimetype=mimetype, status_code=status_code, extra_context=extra_context)
+
+        if data is None:
+            data = b''
+
+        mimetype = mimetype or serialized_mimetype
+        if content_type is None:
+            if mimetype:
+                content_type = mimetype
+            elif isinstance(data, bytes):
+                content_type = 'application/octet-stream'
+            else:
+                content_type = 'text/plain'
+
+        if isinstance(data, (str, dict)):
+            content_type += '; charset=utf-8'
+
+        kwargs = {
+            'content_type': content_type,
+            'headers': headers,
+            'status': status_code
+        }
+        kwargs = {k: v for k, v in kwargs.items() if v is not None}
+        return HttpResponse(data, **kwargs)
 
     @property
     def urls(self):
