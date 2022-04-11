@@ -9,7 +9,7 @@ import logging
 from connexion.apis.abstract import AbstractAPI
 from connexion.lifecycle import ConnexionRequest
 from connexion.utils import yamldumper
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, RawPostDataException
 from django.urls import path as django_path
 from django.views.decorators.http import require_http_methods
 
@@ -88,7 +88,11 @@ class DjangoApi(AbstractAPI):
         This method converts the user framework request to a ConnexionRequest.
         """
         context_dict = {'request': request}
-        body = request.body
+        
+        try:
+            body = request.body
+        except RawPostDataException:
+            body = None
 
         connexion_request = ConnexionRequest(
             request.path,
