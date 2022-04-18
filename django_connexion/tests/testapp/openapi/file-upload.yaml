@@ -1,0 +1,32 @@
+openapi: "3.0.0"
+
+info:
+  title: Upload File
+  version: "1.0"
+servers:
+  - url: http://localhost:9090/v1.0
+
+paths:
+  /upload:
+    post:
+      summary: Upload a file
+      operationId: django_connexion.tests.testapp.views.upload_file
+      description: Upload a file
+      requestBody:
+        description: TODO
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                company:
+                  required:
+                    - my_file
+                  properties: 
+                    my_file:
+                      type: string
+                      format: binary
+                      description: File to upload
+      responses:
+        200:
+          description: OK
