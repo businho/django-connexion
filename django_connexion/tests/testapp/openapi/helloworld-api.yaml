@@ -28,3 +28,33 @@ paths:
           schema:
             type: string
             example: "dave"
+  /names/list:
+    get:
+      summary: Lists names
+      description: Gets a list of available names.
+      operationId: django_connexion.tests.testapp.views.list_names
+      parameters:
+        - name: last_name
+          in: query
+          required: true
+          description: Last name that will be used to compose the names list
+          schema:
+            type: string
+            example: Williamson
+        - name: first_names
+          in: query
+          required: false
+          description: First names that will be used to compose the names list
+          schema:
+            type: array
+            items:
+              type: string
+            example: ["Meow-two", "Dugtree"]
+      responses:
+        200:
+          description: List names response
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Charmander Jones, Bulbassaur Jones

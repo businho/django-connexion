@@ -95,7 +95,7 @@ class DjangoApi(AbstractAPI):
             request.method,
             headers=request.headers,
             form=request.POST,
-            query=request.GET,
+            query=dict(request.GET),
             body=body,
             json_getter=lambda: request.content_type == 'application/json' and json.loads(body),
             files=request.FILES,
