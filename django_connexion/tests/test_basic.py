@@ -16,3 +16,15 @@ def test_yaml_spec(client):
 def test_endpoint(client):
     response = client.post('/helloworld/greeting/ze')
     assert b'Hello ze' in response.content
+
+
+def test_get_query_params(client):
+    first_names = ['Phoebe', 'Frank Jr. Jr.']
+    last_name = 'Buffay'
+    expected_text = 'Phoebe Buffay, Frank Jr. Jr. Buffay'
+
+    response = client.get('/helloworld/names/list',
+                          {'last_name': last_name, 'first_names': first_names})
+    response_text = response.content.decode('utf-8')
+
+    assert response_text == expected_text

@@ -2,7 +2,6 @@ import functools
 import random
 import re
 import string
-
 from django.http import HttpResponse
 
 PATH_PARAMETER = re.compile(r'\{([^}]*)\}')
