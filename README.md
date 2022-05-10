@@ -8,12 +8,12 @@ This is a django api for [connexion lib](https://connexion.readthedocs.io/en/lat
 
 With poetry:
 ```sh
-poetry add git+https://github.com/buserbrasil/django-connexion.git#main
+poetry add django-connexion
 ```
 
 With pip:
 ```sh
-pip install git+https://github.com/buserbrasil/django-connexion.git
+pip install django-connexion
 ```
 
 ### Use
