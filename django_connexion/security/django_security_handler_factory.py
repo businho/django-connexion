@@ -7,7 +7,7 @@ This module provides security handling compatible with Connexion 3.x architectur
 import logging
 from typing import Any, Callable, Dict, Optional
 
-logger = logging.getLogger('connexion.security.django')
+logger = logging.getLogger("connexion.security.django")
 
 
 class DjangoSecurityHandlerFactory:
@@ -33,6 +33,7 @@ class DjangoSecurityHandlerFactory:
         :param token_info_func: Original token info function
         :return: Wrapped function
         """
+
         def wrapper(token: str) -> Optional[Dict[str, Any]]:
             try:
                 return token_info_func(token)
@@ -49,7 +50,10 @@ class DjangoSecurityHandlerFactory:
         :param basic_auth_func: Original basic auth function
         :return: Wrapped function
         """
-        def wrapper(username: str, password: str, required_scopes: Optional[list] = None) -> Optional[Dict[str, Any]]:
+
+        def wrapper(
+            username: str, password: str, required_scopes: Optional[list] = None
+        ) -> Optional[Dict[str, Any]]:
             try:
                 return basic_auth_func(username, password, required_scopes)
             except Exception as e:
@@ -65,6 +69,7 @@ class DjangoSecurityHandlerFactory:
         :param bearer_func: Original bearer function
         :return: Wrapped function
         """
+
         def wrapper(token: str) -> Optional[Dict[str, Any]]:
             try:
                 return bearer_func(token)
@@ -81,7 +86,10 @@ class DjangoSecurityHandlerFactory:
         :param api_key_func: Original API key function
         :return: Wrapped function
         """
-        def wrapper(api_key: str, required_scopes: Optional[list] = None) -> Optional[Dict[str, Any]]:
+
+        def wrapper(
+            api_key: str, required_scopes: Optional[list] = None
+        ) -> Optional[Dict[str, Any]]:
             try:
                 return api_key_func(api_key, required_scopes)
             except Exception as e:
@@ -90,8 +98,9 @@ class DjangoSecurityHandlerFactory:
 
         return wrapper
 
-    def create_security_handler(self, security_scheme: Dict[str, Any],
-                              security_definition: Dict[str, Any]) -> Optional[Callable]:
+    def create_security_handler(
+        self, security_scheme: Dict[str, Any], security_definition: Dict[str, Any]
+    ) -> Optional[Callable]:
         """
         Create a security handler for the given scheme and definition
 
@@ -99,43 +108,51 @@ class DjangoSecurityHandlerFactory:
         :param security_definition: Security definition from OpenAPI spec
         :return: Security handler function or None
         """
-        scheme_type = security_definition.get('type', '').lower()
+        scheme_type = security_definition.get("type", "").lower()
 
-        if scheme_type == 'http':
-            scheme = security_definition.get('scheme', '').lower()
-            if scheme == 'basic':
-                return self._create_basic_auth_handler(security_scheme, security_definition)
-            elif scheme == 'bearer':
-                return self._create_bearer_token_handler(security_scheme, security_definition)
-        elif scheme_type == 'apikey':
+        if scheme_type == "http":
+            scheme = security_definition.get("scheme", "").lower()
+            if scheme == "basic":
+                return self._create_basic_auth_handler(
+                    security_scheme, security_definition
+                )
+            elif scheme == "bearer":
+                return self._create_bearer_token_handler(
+                    security_scheme, security_definition
+                )
+        elif scheme_type == "apikey":
             return self._create_api_key_handler(security_scheme, security_definition)
-        elif scheme_type == 'oauth2':
+        elif scheme_type == "oauth2":
             return self._create_oauth2_handler(security_scheme, security_definition)
 
         logger.warning(f"Unsupported security scheme type: {scheme_type}")
         return None
 
-    def _create_basic_auth_handler(self, security_scheme: Dict[str, Any],
-                                 security_definition: Dict[str, Any]) -> Callable:
+    def _create_basic_auth_handler(
+        self, security_scheme: Dict[str, Any], security_definition: Dict[str, Any]
+    ) -> Callable:
         """Create basic authentication handler"""
+
         def handler(request, *args, **kwargs):
             # Extract basic auth from Django request
-            auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-            if not auth_header.startswith('Basic '):
+            auth_header = request.META.get("HTTP_AUTHORIZATION", "")
+            if not auth_header.startswith("Basic "):
                 return None
 
             try:
                 import base64
+
                 encoded_credentials = auth_header[6:]  # Remove 'Basic '
-                credentials = base64.b64decode(encoded_credentials).decode('utf-8')
-                username, password = credentials.split(':', 1)
+                credentials = base64.b64decode(encoded_credentials).decode("utf-8")
+                username, password = credentials.split(":", 1)
 
                 # Here you would typically validate against Django's auth system
                 from django.contrib.auth import authenticate
+
                 user = authenticate(request, username=username, password=password)
 
                 if user and user.is_active:
-                    return {'user': user, 'username': username}
+                    return {"user": user, "username": username}
                 return None
 
             except Exception as e:
@@ -144,12 +161,14 @@ class DjangoSecurityHandlerFactory:
 
         return handler
 
-    def _create_bearer_token_handler(self, security_scheme: Dict[str, Any],
-                                   security_definition: Dict[str, Any]) -> Callable:
+    def _create_bearer_token_handler(
+        self, security_scheme: Dict[str, Any], security_definition: Dict[str, Any]
+    ) -> Callable:
         """Create bearer token handler"""
+
         def handler(request, *args, **kwargs):
-            auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-            if not auth_header.startswith('Bearer '):
+            auth_header = request.META.get("HTTP_AUTHORIZATION", "")
+            if not auth_header.startswith("Bearer "):
                 return None
 
             token = auth_header[7:]  # Remove 'Bearer '
@@ -159,28 +178,29 @@ class DjangoSecurityHandlerFactory:
             try:
                 # Example: validate JWT token or lookup in database
                 # For now, just return the token
-                return {'token': token}
+                return {"token": token}
             except Exception as e:
                 logger.error(f"Bearer token validation error: {e}")
                 return None
 
         return handler
 
-    def _create_api_key_handler(self, security_scheme: Dict[str, Any],
-                              security_definition: Dict[str, Any]) -> Callable:
+    def _create_api_key_handler(
+        self, security_scheme: Dict[str, Any], security_definition: Dict[str, Any]
+    ) -> Callable:
         """Create API key handler"""
-        key_name = security_definition.get('name', 'X-API-Key')
-        location = security_definition.get('in', 'header')
+        key_name = security_definition.get("name", "X-API-Key")
+        location = security_definition.get("in", "header")
 
         def handler(request, *args, **kwargs):
             api_key = None
 
-            if location == 'header':
+            if location == "header":
                 header_name = f'HTTP_{key_name.upper().replace("-", "_")}'
                 api_key = request.META.get(header_name)
-            elif location == 'query':
+            elif location == "query":
                 api_key = request.GET.get(key_name)
-            elif location == 'cookie':
+            elif location == "cookie":
                 api_key = request.COOKIES.get(key_name)
 
             if not api_key:
@@ -190,19 +210,21 @@ class DjangoSecurityHandlerFactory:
             # This is a placeholder - implement your API key validation logic
             try:
                 # Example: lookup API key in database
-                return {'api_key': api_key}
+                return {"api_key": api_key}
             except Exception as e:
                 logger.error(f"API key validation error: {e}")
                 return None
 
         return handler
 
-    def _create_oauth2_handler(self, security_scheme: Dict[str, Any],
-                             security_definition: Dict[str, Any]) -> Callable:
+    def _create_oauth2_handler(
+        self, security_scheme: Dict[str, Any], security_definition: Dict[str, Any]
+    ) -> Callable:
         """Create OAuth2 handler"""
+
         def handler(request, *args, **kwargs):
-            auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-            if not auth_header.startswith('Bearer '):
+            auth_header = request.META.get("HTTP_AUTHORIZATION", "")
+            if not auth_header.startswith("Bearer "):
                 return None
 
             token = auth_header[7:]  # Remove 'Bearer '
@@ -211,7 +233,7 @@ class DjangoSecurityHandlerFactory:
             # This is a placeholder - implement your OAuth2 validation logic
             try:
                 # Example: introspect token with OAuth2 provider
-                return {'token': token, 'scopes': []}
+                return {"token": token, "scopes": []}
             except Exception as e:
                 logger.error(f"OAuth2 token validation error: {e}")
                 return None

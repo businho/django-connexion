@@ -1,0 +1,17 @@
+# Development dependencies
+pytest>=6.0.0
+pytest-cov>=2.10.0
+pytest-django>=4.0.0
+pytest-runner>=5.0.0
+flake8>=4.0.0
+coverage>=5.0.0
+
+# Build dependencies
+setuptools>=61.0
+wheel>=0.37.0
+build>=0.7.0
+
+# Optional development tools
+black>=22.0.0
+isort>=5.0.0
+mypy>=0.910

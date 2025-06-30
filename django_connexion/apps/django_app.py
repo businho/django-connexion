@@ -1,6 +1,7 @@
 """
 This module defines a DjangoApp, a Connexion application to wrap a Django application.
 """
+
 from connexion.apps.abstract import AbstractApp
 
 
@@ -20,7 +21,9 @@ class DjangoApp(AbstractApp):
         Sets all errors handlers of the user framework application
         """
 
-    def run(self, port=None, server=None, debug=None, host=None, **options):  # pragma: no cover
+    def run(
+        self, port=None, server=None, debug=None, host=None, **options
+    ):  # pragma: no cover
         """
         Runs the application on a local development server.
         :param host: the host interface to bind on.

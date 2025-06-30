@@ -1,12 +1,15 @@
-from typing import List
-from django.http import HttpResponse, HttpRequest
+from typing import List, Optional
+
+from django.http import HttpRequest, HttpResponse
 
 
 def post_greeting(request: HttpRequest, name: str) -> HttpResponse:
-    return HttpResponse(f'Hello {name}')
+    return HttpResponse(f"Hello {name}")
 
 
-def list_names(request: HttpRequest, last_name: str, first_names: List[str] = None) -> HttpResponse:
+def list_names(
+    request: HttpRequest, last_name: str, first_names: Optional[List[str]] = None
+) -> HttpResponse:
     if first_names is None:
         first_names = ["Pikachu", "Charizard"]
     if isinstance(first_names, str):
