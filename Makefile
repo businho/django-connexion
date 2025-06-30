@@ -23,13 +23,15 @@ install-dev: install
 
 # Testing commands
 test: lint
-	python -m pytest --no-cov
+	python -m pytest --no-cov -v
 
 test-cov: lint
 	python -m pytest
 
 # Code quality commands
 lint:
+	black --check django_connexion/
+	isort --check-only django_connexion/
 	flake8 django_connexion/
 	mypy django_connexion/ --ignore-missing-imports
 
