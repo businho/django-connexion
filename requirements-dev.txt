@@ -1,0 +1,20 @@
+# Development dependencies
+pytest>=6.0.0,<9.0.0
+pytest-cov>=2.10.0,<5.0.0
+pytest-django>=4.0.0,<5.0.0
+pytest-runner>=5.0.0,<7.0.0
+flake8>=4.0.0,<8.0.0
+coverage>=5.0.0,<8.0.0
+
+# Build dependencies
+setuptools>=61.0,<81.0.0
+wheel>=0.37.0,<1.0.0
+build>=0.7.0,<2.0.0
+
+# Code quality tools
+black>=22.0.0,<26.0.0
+isort>=5.0.0,<6.0.0
+mypy>=0.910,<2.0.0
+
+# Type stubs
+types-PyYAML>=6.0.0,<7.0.0
